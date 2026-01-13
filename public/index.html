@@ -1,0 +1,178 @@
+
+
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+
+
+<!-- Em desenvolvimento APENAS -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://newsapi.org ws://localhost:*; img-src 'self' https: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+
+
+  <title>Noticias APP</title>
+  <style>
+    html{background-color: aliceblue;}
+    #formulario{width:600px;height:300px; background-color: aliceblue;}
+    body { font-family: system-ui, sans-serif; margin: 2rem; width:600px;margin:auto;}
+    form { display: grid; gap: .5rem; max-width: 280px; margin-right:20px;float:left}
+    .results { display: grid; gap: 1rem; margin-top: 1.5rem;width: 600px; }
+    article { max-width: 580px;border: 1px solid #ddd; padding: 1rem; border-radius: .5rem;background-color: white; }
+    img { max-width: 580px; height: auto; border-radius: .25rem; }
+    .meta { font-size: .875rem; color: #555; }
+    #logo{height: 100px;}
+    header{background-color: white;}
+    h1{float:left}
+
+  </style>
+</head>
+<body>
+<header>
+  <img id="logo" src="https://databar.ai/media/external_source_logo/NewsAPI_QjWnptB.png">
+  <h1>Noticias APP</h1>
+</header>
+
+<div id="formulario">
+  <form id="searchForm">
+      <h2>Pesquisar notícias</h2>
+    <label>
+      Termo (q):
+      <input type="text" name="q" placeholder="ex.: Apple OR Microsoft" required />
+    </label>
+    <label>
+      Idioma (language):
+      <select name="language">
+        <option value="">(todos)</option>
+        <option value="pt">pt</option>
+        <option value="en">en</option>
+        <option value="es">es</option>
+        <option value="fr">fr</option>
+      </select>
+    </label>
+    <label>
+      Ordenação (sortBy):
+      <select name="sortBy">
+        <option value="publishedAt">publishedAt (recentes)</option>
+        <option value="relevancy">relevancy</option>
+        <option value="popularity">popularity</option>
+      </select>
+    </label>
+    <label>
+      De (from, ISO 8601):
+      <input type="date" name="from" />
+    </label>
+    <label>
+      Até (to, ISO 8601):
+      <input type="date" name="to" />
+    </label>
+    <button type="submit">Pesquisar (everything)</button>
+  </form>
+
+
+
+  <form id="headlinesForm">
+    <h2>Top headlines</h2>
+    <label>
+      País (country):
+      <input type="text" name="country" placeholder="ex.: us, gb, de" />
+    </label>
+    <label>
+      Categoria (category):
+      <select name="category">
+        <option value="">(todas)</option>
+        <option>business</option>
+        <option>entertainment</option>
+        <option>general</option>
+        <option>health</option>
+        <option>science</option>
+        <option>sports</option>
+        <option>technology</option>
+      </select>
+    </label>
+    <label>
+      Palavras-chave (q):
+      <input type="text" name="q" placeholder="ex.: trump, football" />
+    </label>
+    <button type="submit">Obter Top Headlines</button>
+  </form>
+</div>
+
+  <div class="results" id="results"></div>
+
+  <script>
+    const resultsEl = document.getElementById('results');
+
+    function renderArticles(data, title) {
+      resultsEl.innerHTML = '';
+      const h = document.createElement('h2');
+      h.textContent = `${title} — ${data.totalResults ?? 0} resultado(s)`;
+      resultsEl.appendChild(h);
+
+      if (data.status !== 'ok') {
+        const err = document.createElement('p');
+        err.textContent = `Erro: ${data.code || ''} ${data.message || ''}`;
+        resultsEl.appendChild(err);
+        return;
+      }
+
+      data.articles.slice(0, 6).forEach(a => {
+
+        const card = document.createElement('article');
+
+        const h3 = document.createElement('h3');
+        h3.textContent = a.title || '(sem título)';
+
+        const meta = document.createElement('div');
+        const src = a.source?.name ? ` • ${a.source.name}` : '';
+        const pub = a.publishedAt ? new Date(a.publishedAt).toLocaleString() : '';
+        meta.className = 'meta';
+        meta.textContent = `${pub}${src}`;
+
+        const desc = document.createElement('p');
+        desc.textContent = a.description || '';
+
+        if (a.urlToImage) {
+          const img = document.createElement('img');
+          img.src = a.urlToImage;
+          img.alt = a.title || '';
+          card.appendChild(img);
+        }
+
+        const link = document.createElement('a');
+        link.href = a.url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'Ler artigo →';
+
+        card.appendChild(h3);
+        card.appendChild(meta);
+        card.appendChild(desc);
+        card.appendChild(link);
+        resultsEl.appendChild(card);
+      });
+    }
+
+    // Form "everything"
+    document.getElementById('searchForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = new FormData(e.currentTarget);
+      const params = new URLSearchParams(Object.fromEntries(data.entries()));
+
+      const r = await fetch(`/api/everything?${params.toString()}`);
+      const json = await r.json();
+      renderArticles(json, 'Resultados (everything)');
+    });
+
+    // Form "top-headlines"
+    document.getElementById('headlinesForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = new FormData(e.currentTarget);
+      const params = new URLSearchParams(Object.fromEntries(data.entries()));
+
+      const r = await fetch(`/api/top-headlines?${params.toString()}`);
+      const json = await r.json();
+      renderArticles(json, 'Top Headlines');
+    });
+  </script>
+</body>
+</html>
+
