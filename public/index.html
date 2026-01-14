@@ -78,7 +78,7 @@
         }
   </style>
 </head>
-<body>
+<body oncontextmenu="semBotaoDireito()">
   <div id="centrado">
         
     <label for="user">Utilizador</label> 
@@ -168,6 +168,14 @@
 </div>
 
 <script>
+
+function semBotaoDireito(){
+    document.addEventListener('contextmenu', event => {
+      event.preventDefault();
+  });
+}
+
+
   const listaUtilizadores = [
       {user:"Rui",pass:"123"},
       {user:"Ana",pass:"321"},
